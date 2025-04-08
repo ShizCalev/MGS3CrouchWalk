@@ -1,4 +1,6 @@
 #include <shlwapi.h>
+#include <iostream>
+#include <filesystem>
 #include "Memory.h"
 #include "MinHook.h"
 #include "ini.h"
@@ -16,6 +18,7 @@ bool CrouchMoving = false;
 bool CrouchMovingSlow = false;
 bool IgnoreButtonHold = false;
 bool HijackSequence = false;
+mINI::INIStructure FPSUnlockConfig;
 
 // config values
 float CamoIndexModifier = 1.0f;
@@ -209,6 +212,18 @@ void ReadConfig()
     CrouchStalkSpeed = std::stof(Config["Settings"]["CrouchStalkSpeed"]);
 }
 
+void ReadFPSUnlockConfig()
+{   
+    if (!std::filesystem::exists("MGSFPSUnlock.asi")) {
+        return;
+    }
+    mINI::INIFile file("MGSFPSUnlock.ini");
+    file.read(FPSUnlockConfig);
+    double TargetFrameRate = std::stof(FPSUnlockConfig["Settings"]["TargetFrameRate"]);
+    CrouchWalkSpeed = CrouchWalkSpeed * (60.0/TargetFrameRate);
+    CrouchStalkSpeed = CrouchStalkSpeed * (60.0/TargetFrameRate);
+}
+
 DWORD WINAPI MainThread(LPVOID lpParam)
 {
     WCHAR exePath[_MAX_PATH] = { 0 };
@@ -220,6 +235,7 @@ DWORD WINAPI MainThread(LPVOID lpParam)
 
     Sleep(3000); // delay, just in case
     ReadConfig();
+    ReadFPSUnlockConfig();
     InstallHooks();
 
     return true;
