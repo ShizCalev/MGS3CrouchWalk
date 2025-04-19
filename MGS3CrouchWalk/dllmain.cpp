@@ -1,6 +1,4 @@
 #include <shlwapi.h>
-#include <iostream>
-#include <filesystem>
 #include "Memory.h"
 #include "MinHook.h"
 #include "ini.h"
@@ -18,7 +16,6 @@ bool CrouchMoving = false;
 bool CrouchMovingSlow = false;
 bool IgnoreButtonHold = false;
 bool HijackSequence = false;
-mINI::INIStructure FPSUnlockConfig;
 double* actorWaitValue = nullptr;
 
 // config values
@@ -192,7 +189,6 @@ void InstallHooks()
     uintptr_t getBtnHoldStateOffset     = (uintptr_t)Memory::PatternScan(GameModule, "44 0F B7 8A 8E 00 00 00 4C 8B C2 66 45 85 C9 78");
     uintptr_t motionPlaySeqOffset       = (uintptr_t)Memory::PatternScan(GameModule, "4D 63 D8 48 85 C9 74 6B  48 63 C2 48 8D 14 40 48");
     uint8_t* disableCrouchProneOffset   = Memory::PatternScan(GameModule, "00 00 7E 19 83 4F 68 10");
-
     uint8_t* actorWaitValueOffset       = Memory::PatternScan(GameModule, "83 3D ?? ?? ?? ?? 00 ?? ?? F2 0F 10 0D");
     if(actorWaitValueOffset != nullptr)
         actorWaitValue = reinterpret_cast<double*>(GetRelativeOffset(actorWaitValueOffset+13));
@@ -228,18 +224,6 @@ void ReadConfig()
     CrouchStalkSpeed = std::stof(Config["Settings"]["CrouchStalkSpeed"]);
 }
 
-void ReadFPSUnlockConfig() //Fallback in case we can't detect actorWaitValue via PatternScan()
-{
-    if (!std::filesystem::exists("MGSFPSUnlock.asi")) {
-        return;
-    }
-    mINI::INIFile file("MGSFPSUnlock.ini");
-    file.read(FPSUnlockConfig);
-    double TargetFrameRate = std::stof(FPSUnlockConfig["Settings"]["TargetFrameRate"]);
-    CrouchWalkSpeed = CrouchWalkSpeed * (60.0/TargetFrameRate);
-    CrouchStalkSpeed = CrouchStalkSpeed * (60.0/TargetFrameRate);
-}
-
 DWORD WINAPI MainThread(LPVOID lpParam)
 {
     WCHAR exePath[_MAX_PATH] = { 0 };
@@ -252,9 +236,6 @@ DWORD WINAPI MainThread(LPVOID lpParam)
     Sleep(3000); // delay, just in case
     ReadConfig();
     InstallHooks();
-    if (actorWaitValue == nullptr) {
-        ReadFPSUnlockConfig();
-    }
 
     return true;
 }
