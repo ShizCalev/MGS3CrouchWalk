@@ -148,10 +148,12 @@ int* __fastcall ActionSquatStillHook(int64_t work, MovementWork* plWork, int64_t
 
         if (mCtrlGlobal != NULL)
         {
-            if (actorWaitValue != nullptr) {
+            if (actorWaitValue != nullptr) 
+            {
                 mCtrlGlobal->mtcmControl->motionTimeBase = (CrouchMovingSlow ? CrouchStalkSpeed : CrouchWalkSpeed) * (*actorWaitValue / (1.0 / 60));
             }
-            else {
+            else 
+            {
                 mCtrlGlobal->mtcmControl->motionTimeBase = CrouchMovingSlow ? CrouchStalkSpeed : CrouchWalkSpeed;
             }
 
@@ -191,7 +193,9 @@ void InstallHooks()
     uint8_t* disableCrouchProneOffset   = Memory::PatternScan(GameModule, "00 00 7E 19 83 4F 68 10");
     uint8_t* actorWaitValueOffset       = Memory::PatternScan(GameModule, "83 3D ?? ?? ?? ?? 00 ?? ?? F2 0F 10 0D");
     if(actorWaitValueOffset != nullptr)
-        actorWaitValue = reinterpret_cast<double*>(GetRelativeOffset(actorWaitValueOffset+13));
+    {
+        actorWaitValue = reinterpret_cast<double*>(GetRelativeOffset(actorWaitValueOffset + 13));
+    }
 
 
     ActSquatStillOffset     = (uintptr_t)Memory::PatternScan(GameModule, "4C 8B DC 55 57 41 56 49 8D 6B A1 48 81 EC 00 01");
