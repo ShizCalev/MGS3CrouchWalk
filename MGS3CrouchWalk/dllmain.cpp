@@ -1,3 +1,6 @@
+#include <array>
+#include <filesystem>
+#include <iostream>
 #include <shlwapi.h>
 #include "Memory.h"
 #include "MinHook.h"
@@ -201,7 +204,32 @@ void InstallHooks()
 
 void ReadConfig()
 {
-    mINI::INIFile file("MGS3CrouchWalk.ini");
+    WCHAR exePath[_MAX_PATH] = { 0 };
+    GetModuleFileNameW(GameModule, exePath, MAX_PATH);
+    std::filesystem::path sExePath = exePath;
+    sExePath = sExePath.remove_filename();
+    std::string sFixPath;
+    std::array<std::string, 4> paths = { "", "plugins", "scripts", "update" };
+    for (const auto& path : paths)
+    {
+        auto filePath = sExePath / path / ("MGS3CrouchWalk.asi");
+        if (std::filesystem::exists(filePath))
+        {
+            if (!sFixPath.empty()) //multiple versions found
+            { 
+                AllocConsole();
+                FILE* dummy;
+                freopen_s(&dummy, "CONOUT$", "w", stdout);
+                std::string errorMessage = "DUPLICATE FILE ERROR: Duplicate MGS3CrouchWalk.asi installations found! Please make sure to delete any old versions!\n";
+                errorMessage.append("DUPLICATE FILE ERROR - Installation 1: ").append((sExePath / sFixPath / ("MGS3CrouchWalk.asi\n")).string());
+                errorMessage.append("DUPLICATE FILE ERROR - Installation 2: ").append(filePath.string());
+                std::cout << errorMessage;
+                return FreeLibraryAndExitThread(GameModule, 1);
+            }
+            sFixPath = path;
+        }
+    }
+    mINI::INIFile file((sExePath / sFixPath / "MGS3CrouchWalk.ini").string());
     file.read(Config);
     CamoIndexModifier = std::stof(Config["Settings"]["CamoIndexModifier"]);
     CamoIndexValue = std::stoi(Config["Settings"]["CamoIndexValue"]) * 10;
